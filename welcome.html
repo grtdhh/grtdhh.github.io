@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>敦煌莫高窟语音导览</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "楷体", "STKaiti", "华文楷体", serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f5e6d3;
+        }
+
+        .welcome-container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255, 251, 245, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            border: 2px solid #8b4513;
+            max-width: 800px;
+            margin: 20px;
+        }
+
+        .welcome-title {
+            font-size: 48px;
+            color: #8b4513;
+            margin-bottom: 20px;
+            letter-spacing: 8px;
+        }
+
+        .start-btn {
+            background: #8b4513;
+            color: #f1c40f;
+            border: none;
+            padding: 15px 50px;
+            font-size: 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid #d4b895;
+        }
+
+        .start-btn:hover {
+            background: #a0522d;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="welcome-container">
+        <h1 class="welcome-title">敦煌莫高窟</h1>
+        <p style="font-size: 24px; margin-bottom: 40px;">
+            穿越千年时光，感受佛国艺术之美
+        </p>
+        <button class="start-btn" onclick="window.location.href='index.html'">
+            开启导览
+        </button>
+    </div>
+</body>
+</html> 

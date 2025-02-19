@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="莫高窟智能导览系统 - 为您提供专业的敦煌莫高窟参观导览服务">
+    <meta name="keywords" content="莫高窟,敦煌,导览,智能导览,文物,佛教艺术,壁画,彩塑">
+    <title>莫高窟智能导览</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jwt-encode/3.1.2/jwt-encode.min.js"></script>
+    <script type="text/javascript" src="https://api.map.baidu.com/api?v=3.0&ak=roU0E4tM1eSairg4551IjRxGVOxgENyv"></script>
+    <link rel="icon" href="images/favicon.ico" type="image/x-icon">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="format-detection" content="telephone=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https:;">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: "楷体", "STKaiti", "华文楷体", serif;
+            background: #f5e6d3;
+        }
+
+        .cave-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .cave-card {
+            margin-bottom: 20px;
+        }
+
+        .cave-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .cave-description {
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .navigation-menu {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+            background: #fff;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-btn {
+            background: #8b4513;
+            color: #f1c40f;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .nav-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .audio-player {
+            width: 100%;
+            margin: 20px 0;
+        }
+
+        .time-display {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 251, 245, 0.95);
+            padding: 12px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(139, 69, 19, 0.2);
+            border: 1px solid #d4b895;
+            font-size: 20px;
+            color: #8b4513;
+            z-index: 100;
+            text-align: center;
+            min-width: 200px;
+        }
+
+        .map-btn {
+            position: fixed;
+            bottom: 80px;
+            left: 20px;
+            background: #8b4513;
+            color: #f1c40f;
+            border: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid #d4b895;
+            z-index: 1000;
+        }
+
+        .map-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1001;
+        }
+
+        .map-container {
+            position: relative;
+            width: 80%;
+            height: 80%;
+            margin: 5% auto;
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        #baiduMap {
+            width: 100%;
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        .ai-btn {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: #8b4513;
+            color: #f1c40f;
+            border: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid #d4b895;
+            z-index: 1000;
+        }
+
+        .ai-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1001;
+        }
+
+        .ai-container {
+            position: relative;
+            width: 80%;
+            height: 80%;
+            margin: 5% auto;
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ai-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        .ai-input-container {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .ai-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #d4b895;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .ai-send-btn {
+            padding: 10px 20px;
+            background: #8b4513;
+            color: #f1c40f;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .ai-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            color: #8b4513;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .ai-close:hover {
+            background: #f5e6d3;
+        }
+
+        .audio-section {
+            background: #fff9f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 6px rgba(139, 69, 19, 0.15);
+        }
+        
+        .audio-section h3 {
+            color: #8b4513;
+            margin: 0 0 15px 0;
+            font-size: 20px;
+        }
+        
+        .custom-audio-player {
+            width: 100%;
+            height: 40px;
+            border-radius: 20px;
+            outline: none;
+            background: #fff;
+        }
+        
+        /* 自定义音频播放器样式 */
+        audio::-webkit-media-controls-panel {
+            background-color: #fff;
+        }
+        
+        audio::-webkit-media-controls-play-button {
+            background-color: #8b4513;
+            border-radius: 50%;
+        }
+        
+        audio::-webkit-media-controls-current-time-display,
+        audio::-webkit-media-controls-time-remaining-display {
+            color: #8b4513;
+        }
+    </style>
+</head>
+<body>
+    <div class="time-display" id="timeDisplay"></div>
+    <button class="map-btn" onclick="toggleMap()">景区地图</button>
+    
+    <!-- 地图模态框 -->
+    <div class="map-modal" id="mapModal">
+        <div class="map-container">
+            <span class="close-map" onclick="toggleMap()">&times;</span>
+            <div id="baiduMap"></div>
+        </div>
+    </div>
+
+    <div class="cave-content">
+        <div class="cave-card">
+            <img id="caveImage" src="" alt="洞窟图片" class="cave-image">
+            <h2 id="caveTitle"></h2>
+            <div id="caveDuration"></div>
+            <audio id="caveAudio" controls class="audio-player">
+                <!-- 音频源会由 JavaScript 动态设置 -->
+                您的浏览器不支持音频播放
+            </audio>
+            <div id="caveDescription" class="cave-description"></div>
+        </div>
+    </div>
+
+    <div class="navigation-menu">
+        <button class="nav-btn" id="prevBtn" onclick="navigateCave('prev')">上一个洞窟</button>
+        <button class="nav-btn" id="playBtn" onclick="toggleAudio()">播放语音</button>
+        <button class="nav-btn" id="nextBtn" onclick="navigateCave('next')">下一个洞窟</button>
+    </div>
+
+    <button class="ai-btn" onclick="toggleAIModal()">问AI导游</button>
+    
+    <!-- AI对话模态框 -->
+    <div class="ai-modal" id="aiModal">
+        <div class="ai-container">
+            <span class="ai-close" onclick="toggleAIModal()">&times;</span>
+            <div class="ai-messages" id="aiMessages">
+                <div class="message ai-message">
+                    您好！我是莫高窟AI导游，很高兴为您服务。您可以询问我关于莫高窟的任何问题。
+                </div>
+            </div>
+            <div class="ai-input-container">
+                <input type="text" class="ai-input" id="aiInput" 
+                       placeholder="请输入您的问题..."
+                       onkeypress="if(event.keyCode === 13) sendMessage()">
+                <button class="ai-send-btn" onclick="sendMessage()">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 完整的洞窟数据
+        const cavesData = [
+            {
+                id: 1,
+                name: '游客中心',
+                period: '第一站',
+                audioUrl: 'public/ttsmaker-file-2025-2-12-19-53-15.mp3',
+                imageUrl: 'public/images/visitor-center.jpg',
+                description: `开启莫高窟之旅的第一站，游客中心为游客提供丰富的游览信息。在这里，你不仅能领取详细的导览图，
+                            对莫高窟的整体布局与历史有初步认知，还能观看两部极具价值的影片。主题电影全方位展示莫高窟跨越千年的历史变迁，
+                            球幕电影则以沉浸式的方式，让你仿若置身洞窟，提前领略精美壁画与彩塑，为实地参观奠定良好基础。`,
+                duration: '1.5小时'
+            },
+            {
+                id: 2,
+                name: '96窟',
+                period: '盛唐',
+                audioUrl: 'public/ttsmaker-file-2025-2-12-21-30-46.mp3',
+                imageUrl: 'public/images/cave-96.jpg',
+                description: '第96窟是莫高窟规模最大的洞窟之一，建于唐代。洞窟高35.5米，内有一尊巨大的弥勒佛坐像，是莫高窟最高大的彩塑造像。佛像神态庄严，比例匀称，体现了盛唐时期精湛的雕塑艺术。洞窟壁面绘有精美的壁画，以飞天、菩萨、供养人等题材为主，色彩艳丽，线条流畅，是莫高窟艺术的代表作。',
+                duration: '30分钟'
+            },
+            {
+                id: 3,
+                name: '第17窟',
+                period: '藏经洞',
+                audioUrl: 'public/ttsmaker-file-2025-2-12-21-42-14.mp3',
+                imageUrl: 'public/images/CD5DE8E99324CBE18BF4873AD11_55DA798C_EC7CA.png',
+                description: `17窟是举世闻名的藏经洞，这里曾藏有公元4世纪到11世纪的佛教经卷、社会文书、刺绣、绢画、法器等文物五万余件。
+                            尽管大部分珍贵文物流失海外，但洞窟内的壁画和塑像依然散发着独特的魅力。壁画生动描绘了佛教修行场景，
+                            彩塑中的高僧像神态逼真，其背后那段文物流失的历史，更能引发参观者对文物保护的深刻思考。`,
+                duration: '30分钟'
+            },
+            {
+                id: 4,
+                name: '第257窟',
+                period: '九色鹿',
+                audioUrl: 'public/ttsmaker-file-2025-2-12-21-55-42.mp3',
+                imageUrl: 'public/images/v2-50c269b262619640978ca4b07780ff87_r.jpg',
+                description: `第257窟是莫高窟著名的艺术宝窟之一，以其精美的壁画著称。其中最具代表性的是《九色鹿本生故事》壁画，
+                            这幅壁画采用横卷式构图，从左右两边向中间展开，生动讲述了九色鹿救起溺水者，却被恩将仇报的故事。
+                            画面色彩鲜艳，线条流畅，人物形象栩栩如生，将善恶美丑展现得淋漓尽致，是莫高窟壁画艺术的经典之作，
+                            蕴含着深刻的道德寓意。`,
+                duration: '30分钟'
+            },
+            {
+                id: 5,
+                name: '第254窟',
+                period: '北魏风格',
+                audioUrl: 'public/ttsmaker-file-2025-2-12-22-33-41.mp3',
+                imageUrl: 'public/images/R.jpg',
+                description: `这是莫高窟早期洞窟的代表之一，拥有独特的北魏风格。洞窟内的壁画和彩塑展现了北魏时期的艺术特色，
+                            如壁画中的人物造型清瘦，服饰飘逸，体现了"秀骨清像"的风格特点。而著名的《萨埵太子舍身饲虎图》就位于此窟，
+                            这幅壁画情节跌宕起伏，通过细腻的笔触描绘了萨埵太子为救饿虎，不惜舍身的故事，展现出强烈的艺术感染力。`,
+                duration: '30分钟'
+            },
+            {
+                id: 6,
+                name: '第320窟',
+                period: '盛唐艺术',
+                audioUrl: 'public/ttsmaker-file-2025-2-12-22-40-50.mp3',
+                imageUrl: 'public/images/OIP.jpg',
+                description: `此窟为盛唐时期的佳作，以其精美的壁画和生动的彩塑闻名。窟顶的藻井图案色彩绚丽，中心的莲花造型饱满，
+                            四周环绕着飞天。西壁的阿弥陀经变壁画，描绘了西方净土世界的华丽景象，众多人物形象刻画细腻，姿态各异，
+                            体现了盛唐时期佛教艺术的辉煌与繁荣，让你领略到那个时代高超的绘画技艺和丰富的想象力。`,
+                duration: '30分钟'
+            },
+            {
+                id: 7,
+                name: '敦煌研究院院史陈列馆',
+                period: '文物保护',
+                audioUrl: 'public/ttsmaker-file-2025-2-12-22-47-14.mp3',
+                imageUrl: 'public/images/010011200082qch9pC9F5.jpg',
+                description: `参观完窟区后，来到陈列馆。这里通过珍贵的历史照片、文献资料以及实物展品，展示了敦煌研究院自成立以来的发展历程，
+                            详细介绍了几代敦煌人在艰苦的环境下，为保护、研究和弘扬莫高窟文化所做出的不懈努力，
+                            让你深入了解莫高窟的保护与传承背后的故事。`,
+                duration: '1小时'
+            },
+            {
+                id: 8,
+                name: '数字展示中心',
+                period: '完美收官',
+                audioUrl: 'public/ttsmaker-file-2025-2-12-22-54-2.mp3',
+                imageUrl: 'public/images/OIP (1).jpg',
+                description: `返回数字展示中心，在这里你可以再次回顾莫高窟的精彩内容，也可以在休息区稍作休息，
+                            还能在纪念品商店挑选一些带有莫高窟元素的特色纪念品，如精美的壁画临摹画册、飞天造型的工艺品等，
+                            将这段美好的莫高窟之旅记忆带回家。`,
+                duration: '1小时'
+            }
+        ];
+
+        let currentCaveIndex = 0;
+        let isPlaying = false;
+
+        function updateCaveDisplay() {
+            const cave = cavesData[currentCaveIndex];
+            
+            document.getElementById('caveTitle').textContent = `${cave.name} - ${cave.period}`;
+            document.getElementById('caveDuration').textContent = `预计游览时间：${cave.duration}`;
+            document.getElementById('caveImage').src = cave.imageUrl;
+            document.getElementById('caveDescription').innerHTML = `<p>${cave.description}</p>`;
+            
+            const audio = document.getElementById('caveAudio');
+            if (cave.audioUrl && cave.audioUrl.includes('.mp3')) {
+                audio.src = cave.audioUrl;
+                audio.load();
+                
+                // 添加音频加载状态提示
+                const playBtn = document.getElementById('playBtn');
+                playBtn.textContent = '加载中...';
+                playBtn.disabled = true;
+                
+                audio.oncanplay = function() {
+                    playBtn.textContent = '播放语音';
+                    playBtn.disabled = false;
+                    console.log('音频已就绪');
+                };
+                
+                audio.onerror = function() {
+                    console.error('音频加载失败:', audio.error);
+                    playBtn.textContent = '音频加载失败';
+                    playBtn.disabled = true;
+                    
+                    // 3秒后自动重试
+                    setTimeout(() => {
+                        audio.load();
+                    }, 3000);
+                };
+            } else {
+                audio.src = '';
+                console.log('当前位置暂无音频讲解');
+            }
+            
+            document.getElementById('prevBtn').disabled = currentCaveIndex === 0;
+            document.getElementById('nextBtn').disabled = currentCaveIndex === cavesData.length - 1;
+            
+            isPlaying = false;
+        }
+
+        function navigateCave(direction) {
+            if (direction === 'next' && currentCaveIndex < cavesData.length - 1) {
+                currentCaveIndex++;
+            } else if (direction === 'prev' && currentCaveIndex > 0) {
+                currentCaveIndex--;
+            }
+            updateCaveDisplay();
+        }
+
+        function toggleAudio() {
+            const audio = document.getElementById('caveAudio');
+            if (isPlaying) {
+                audio.pause();
+                document.getElementById('playBtn').textContent = '播放语音';
+            } else {
+                audio.play();
+                document.getElementById('playBtn').textContent = '暂停语音';
+            }
+            isPlaying = !isPlaying;
+        }
+
+        // 动态时间显示功能
+        function updateTime() {
+            const now = new Date();
+            const timeDisplay = document.getElementById('timeDisplay');
+            
+            const month = now.getMonth() + 1;
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            
+            const isPeakSeason = month >= 4 && month <= 11;
+            let isOpenTime = false;
+            
+            if (isPeakSeason) {
+                isOpenTime = hour >= 8 && (hour < 18 || (hour === 18 && minute === 0));
+            } else {
+                isOpenTime = hour >= 9 && (hour < 17 || (hour === 17 && minute <= 30));
+            }
+            
+            const timeString = now.toLocaleTimeString('zh-CN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            const dateString = now.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+            
+            timeDisplay.innerHTML = `
+                <div>${dateString}</div>
+                <div>${timeString}</div>
+                <div style="color: ${isOpenTime ? '#52c41a' : '#f5222d'}">
+                    ${isOpenTime ? '景区开放中' : '景区已关闭'}
+                </div>
+                <div style="font-size: 12px">
+                    ${isPeakSeason ? '旺季：08:00-18:00' : '淡季：09:00-17:30'}
+                </div>
+            `;
+        }
+
+        // 地图相关功能
+        let map = null;
+        let userMarker = null;
+        let watchId = null;
+        
+        function initMap() {
+            map = new BMap.Map("baiduMap");
+            const centerPoint = new BMap.Point(94.818331, 40.037016);
+            map.centerAndZoom(centerPoint, 17);
+            map.enableScrollWheelZoom();
+            
+            // 添加定位控件
+            const locationControl = new BMap.GeolocationControl({
+                anchor: BMAP_ANCHOR_BOTTOM_RIGHT,
+                showAddressBar: false,
+                enableAutoLocation: true
+            });
+            map.addControl(locationControl);
+            
+            // 添加景点标记
+            const locations = [
+                {name: '游客中心', position: [94.817831, 40.036516]},
+                {name: '第96窟', position: [94.818331, 40.037016]},
+                {name: '第17窟', position: [94.818531, 40.037216]},
+                {name: '第257窟', position: [94.818731, 40.037416]},
+                {name: '第254窟', position: [94.818931, 40.037616]},
+                {name: '第320窟', position: [94.819131, 40.037816]},
+                {name: '敦煌研究院院史陈列馆', position: [94.817631, 40.036316]},
+                {name: '数字展示中心', position: [94.817531, 40.036216]}
+            ];
+            
+            // 存储所有景点信息，用于计算距离
+            window.locationPoints = locations.map(loc => ({
+                ...loc,
+                point: new BMap.Point(loc.position[0], loc.position[1])
+            }));
+            
+            locations.forEach(loc => {
+                const point = new BMap.Point(loc.position[0], loc.position[1]);
+                const marker = new BMap.Marker(point);
+                map.addOverlay(marker);
+                
+                const label = new BMap.Label(loc.name, {
+                    position: point,
+                    offset: new BMap.Size(20, -10)
+                });
+                map.addOverlay(label);
+            });
+
+            // 开始监听位置
+            startLocationWatch();
+        }
+
+        // 开始监听位置
+        function startLocationWatch() {
+            if (navigator.geolocation) {
+                watchId = navigator.geolocation.watchPosition(
+                    updateUserLocation,
+                    handleLocationError,
+                    {
+                        enableHighAccuracy: true,
+                        maximumAge: 30000,
+                        timeout: 27000
+                    }
+                );
+            } else {
+                alert("您的浏览器不支持位置服务");
+            }
+        }
+
+        // 更新用户位置
+        function updateUserLocation(position) {
+            try {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                const userPoint = new BMap.Point(userLng, userLat);
+
+                if (!userMarker) {
+                    userMarker = new BMap.Marker(userPoint, {
+                        icon: new BMap.Symbol(BMap_Symbol_SHAPE_CIRCLE, {
+                            scale: 1,
+                            fillColor: "#1890ff",
+                            fillOpacity: 0.8,
+                            strokeColor: "#fff",
+                            strokeWeight: 2
+                        })
+                    });
+                    map.addOverlay(userMarker);
+                } else {
+                    userMarker.setPosition(userPoint);
+                }
+
+                // 添加定位精度圈
+                const accuracy = position.coords.accuracy;
+                const circle = new BMap.Circle(userPoint, accuracy, {
+                    strokeColor: "#1890ff",
+                    strokeWeight: 1,
+                    strokeOpacity: 0.3,
+                    fillColor: "#1890ff",
+                    fillOpacity: 0.1
+                });
+                map.addOverlay(circle);
+
+                // 查找最近的景点并优化触发距离判断
+                let nearestLocation = findNearestLocation(userPoint);
+                if (nearestLocation) {
+                    const distance = map.getDistance(userPoint, nearestLocation.point);
+                    // 根据精度动态调整触发距离
+                    const triggerDistance = Math.max(50, accuracy / 2);
+                    if (distance <= triggerDistance) {
+                        const caveIndex = cavesData.findIndex(cave => cave.name === nearestLocation.name);
+                        if (caveIndex !== -1 && caveIndex !== currentCaveIndex) {
+                            currentCaveIndex = caveIndex;
+                            updateCaveDisplay();
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('位置更新错误:', error);
+            }
+        }
+
+        // 查找最近的景点
+        function findNearestLocation(userPoint) {
+            let nearestLocation = null;
+            let minDistance = Infinity;
+
+            window.locationPoints.forEach(loc => {
+                const distance = map.getDistance(userPoint, loc.point);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestLocation = loc;
+                }
+            });
+
+            return nearestLocation;
+        }
+
+        // 处理位置错误
+        function handleLocationError(error) {
+            let errorMsg = "";
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMsg = "用户拒绝了位置请求";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMsg = "位置信息不可用";
+                    break;
+                case error.TIMEOUT:
+                    errorMsg = "请求超时";
+                    break;
+                case error.UNKNOWN_ERROR:
+                    errorMsg = "发生未知错误";
+                    break;
+            }
+            console.error("位置错误：", errorMsg);
+        }
+        
+        function toggleMap() {
+            const mapModal = document.getElementById('mapModal');
+            if (mapModal.style.display === 'block') {
+                mapModal.style.display = 'none';
+                // 停止位置监听
+                if (watchId) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
+            } else {
+                mapModal.style.display = 'block';
+                if (!map) {
+                    initMap();
+                } else {
+                    // 重新开始位置监听
+                    startLocationWatch();
+                }
+            }
+        }
+
+        // 添加错误监控和上报
+        window.addEventListener('error', function(event) {
+            console.error('资源加载错误:', {
+                message: event.message,
+                source: event.filename,
+                lineno: event.lineno,
+                colno: event.colno,
+                error: event.error
+            });
+            return true;
+        }, true);
+
+        // 添加性能监控
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                const timing = window.performance.timing;
+                const loadTime = timing.loadEventEnd - timing.navigationStart;
+                console.log('页面加载时间:', loadTime + 'ms');
+            }, 0);
+        });
+
+        // 优化资源加载
+        function preloadResources() {
+            // 预加载图片
+            cavesData.forEach(cave => {
+                const img = new Image();
+                img.src = cave.imageUrl;
+            });
+
+            // 预加载音频，使用 Promise 处理加载状态
+            const audioPromises = cavesData.map(cave => {
+                if (cave.audioUrl) {
+                    return new Promise((resolve, reject) => {
+                        const audio = new Audio();
+                        audio.preload = 'metadata';
+                        audio.src = cave.audioUrl;
+                        audio.oncanplaythrough = resolve;
+                        audio.onerror = reject;
+                    });
+                }
+                return Promise.resolve();
+            });
+
+            Promise.all(audioPromises)
+                .then(() => console.log('所有资源预加载完成'))
+                .catch(error => console.error('资源预加载失败:', error));
+        }
+
+        // 优化地图加载
+        function initMapWithRetry(retryCount = 3) {
+            try {
+                initMap();
+            } catch (error) {
+                if (retryCount > 0) {
+                    console.log(`地图初始化失败，剩余重试次数: ${retryCount}`);
+                    setTimeout(() => initMapWithRetry(retryCount - 1), 2000);
+                } else {
+                    console.error('地图初始化失败:', error);
+                    alert('地图加载失败，请刷新页面重试');
+                }
+            }
+        }
+
+        // 页面加载优化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查浏览器兼容性
+            if (!window.Promise || !window.fetch) {
+                alert('您的浏览器版本过低，某些功能可能无法正常使用，建议升级到最新版本');
+            }
+
+            // 初始化页面
+            updateCaveDisplay();
+            updateTime();
+            setInterval(updateTime, 1000);
+            
+            // 延迟加载非关键资源
+            setTimeout(preloadResources, 1000);
+        });
+
+        // JWT 生成函数
+        function generateToken(apiKey) {
+            const [id, secret] = apiKey.split('.');
+            const now = Date.now();
+            
+            const header = {
+                alg: 'HS256',
+                sign_type: 'SIGN'
+            };
+            
+            const payload = {
+                api_key: id,
+                exp: Math.floor(now/1000) + 3600, // 使用秒级时间戳
+                timestamp: now
+            };
+            
+            // 使用 jwt-encode 库生成token
+            return jwt.encode(payload, secret, header);
+        }
+
+        // AI对话配置
+        const AI_CONFIG = {
+            apiKey: '58d40582393749fe9480c9b69ce8fdc2.4kh0vsQOkVwsi7ki',
+            baseUrl: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+            model: 'glm-4'
+        };
+
+        // 预设问答库
+        const QA_DATABASE = {
+            '位置在哪里|怎么找到莫高窟|莫高窟具体位置|到莫高窟怎么走|莫高窟地理位置|莫高窟在什么地方': '莫高窟位于甘肃省敦煌市东南25公里处的鸣沙山东麓断崖上。它所在的敦煌，地处河西走廊西端，是古代丝绸之路上的重要节点城市。',
+            '什么时候开门|几点开始参观|开放时间是怎么安排的|现在能进去吗|开门时间是什么时候|几点关门|最晚什么时候能进去': '莫高窟实行淡旺季开放时间。旺季（4月-10月）：08:00-18:00；淡季（11月-次年3月）：09:00-17:30。建议提前2-3小时到达数字展示中心观看数字影片，然后乘坐摆渡车前往实体洞窟参观。',
+            '门票怎么买|票价是多少|参观要花多少钱|门票贵不贵|门票都包含什么|买什么票比较好|门票有优惠吗|学生票怎么买': '莫高窟门票主要有A类、B类等类型。A类门票全价票238元/人，包含观看主题数字电影《千年莫高》和球幕电影《梦幻佛宫》，之后乘坐摆渡车前往莫高窟实体洞窟，由专业讲解员带领参观8个洞窟。B类门票全价票100元/人，只安排参观莫高窟实体洞窟4个，不包含数字电影。需要注意的是，门票价格可能会根据景区政策有所调整，建议在官方渠道查询最新信息。',
+            '带孩子去合适吗|适合带小朋友吗|老人能去参观吗|带父母去方便吗|家庭出游推荐吗': '带着老人和孩子出行，行程安排要更加宽松舒适。参观莫高窟时，尽量选择上午时段，此时大家精力充沛，且洞窟内光线和温度相对适宜。在观看数字电影时，提前选好舒适的座位。参观过程中要适当休息，补充水分和食物。避免安排过于紧凑的景点转换，减少路途奔波。另外，要准备防晒用品、防风衣物和保湿护肤品，因为敦煌气候干燥，紫外线强。',
+            '最著名的是哪个洞窟|哪个洞窟最值得看|推荐去哪个洞窟|必看的洞窟有哪些|最精华的是哪些': '莫高窟最著名的洞窟包括：第17窟"藏经洞"，1900年发现大量珍贵文物；第96窟"九层楼"，供奉着35.5米高的弥勒佛坐像；第257窟，有著名的《九色鹿本生》壁画；第45窟，以精美的飞天壁画闻名。每个洞窟都有其独特的艺术价值和历史意义。',
+            '参观要多长时间|大概要玩多久|几个小时能逛完|建议待多久|要预留多少时间': '建议预留一整天时间。上午先在数字展示中心观看数字电影（约1.5小时），然后参观洞窟（2-3小时），下午可以参观陈列馆（1小时）。如果想深入了解，建议安排两天，第二天可以参观更多洞窟，或去敦煌研究院了解文物保护工作。',
+            '有讲解器吗|导游讲解怎么安排|能请导游吗|讲解服务怎么样|英语讲解有吗': '莫高窟实行专业讲解员全程讲解制度。A类门票包含讲解服务，讲解员会详细介绍每个洞窟的历史背景、艺术特色和文化内涵。也可以提前预约英语、日语等外语讲解服务。讲解员都经过专业培训，能够深入浅出地介绍莫高窟文化。',
+            '天气热吗|什么季节去最好|几月份去最合适|现在天气怎么样|需要带外套吗': '敦煌属于温带干旱气候，昼夜温差大。春秋两季（4-5月、9-10月）最适合参观，气温适宜。夏季（6-8月）炎热，需要防暑；冬季（11-2月）寒冷，要防寒。无论什么季节都要注意防晒，建议带帽子、防晒衣物，准备充足的水。',
+            '有没有好玩的纪念品|伴手礼买什么好|有特色的纪念品推荐|想带点特产回去': '莫高窟文创商店提供多种特色商品：1. 壁画复制品和画册，制作精美，很有收藏价值；2. 丝巾、围巾等服饰，融入敦煌元素；3. 飞天主题文创产品，很有特色；4. 敦煌研究院出版的书籍和明信片；5. 莫高窟主题的文具和日用品。建议参观结束后购买，避免携带太多物品。',
+            '特点|特色|看点|亮点|精华|代表性': '莫高窟的主要特点包括：1. 建筑艺术：492个彩绘洞窟，多层错落有致的建筑群展现了精湛的建筑技艺；2. 壁画艺术：45000平方米的壁画，题材丰富，技法多样，是世界上现存规模最大的佛教艺术宝库；3. 彩塑艺术：2000多尊彩塑，造型生动，是中国最大的彩塑艺术宝库；4. 文化价值：藏经洞出土的大量文物，展现了古代丝绸之路的文化交流；5. 佛教艺术：完整记录了中国佛教艺术从兴起到鼎盛的发展历程。',
+            '壁画特点|壁画艺术|壁画风格|画的怎么样': '莫高窟壁画艺术特点主要有：1. 题材广泛：包括佛教故事、经变画、供养人像、山水人物等；2. 技法精湛：运用晕染、勾勒、渲染等多种绘画技法；3. 色彩绚丽：采用天然矿物颜料，色彩艳丽持久；4. 风格多样：融合了中原、西域等多地艺术特色；5. 内容丰富：不仅展现佛教题材，还记录了古代社会生活、服饰、乐舞等文化内容。',
+            '彩塑特点|佛像特点|塑像艺术|雕塑特色': '莫高窟彩塑艺术特点包括：1. 造型生动：人物形象栩栩如生，表情丰富；2. 技艺精湛：采用泥塑彩绘工艺，内部用木骨架支撑；3. 规模宏大：从巨大的佛像到小型菩萨像，尺寸多样；4. 艺术风格：不同时期展现不同的艺术特色，反映了佛教艺术的发展；5. 保存完好：由于干燥的气候条件，许多彩塑保存状况良好。',
+            '建筑特点|建筑艺术|建筑风格|洞窟特点': '莫高窟建筑艺术特点有：1. 依崖而建：巧妙利用断崖地形，开凿洞窟；2. 多层布局：洞窟上下五层，错落有致；3. 建筑形式：有中心柱窟、大像窟、禅窟等不同类型；4. 空间利用：根据洞窟功能合理设计空间布局；5. 建筑装饰：窟檐、门楣等建筑构件装饰精美。',
+            '文物特点|文物价值|历史价值|考古价值': '莫高窟文物价值主要体现在：1. 历史见证：记录了十六国至元代近千年的历史变迁；2. 艺术价值：壁画和彩塑展现了精湛的古代艺术；3. 文献价值：藏经洞出土的文献涉及宗教、文学、历史等多个领域；4. 文化交流：反映了中西文化交融的历史；5. 科研价值：为研究古代社会、艺术、宗教提供重要资料。',
+            '拍照|摄影|拍视频|自拍|录像': '为了保护文物，莫高窟实体洞窟内严禁拍照和摄像。您可以在景区外部、数字展示中心等区域拍照留念。建议通过购买画册、明信片等方式记录莫高窟的美景。违规拍照可能会被要求删除照片，严重者将被请出景区。',
+            '厕所|洗手间|卫生间|化妆间|休息': '莫高窟景区设有多处洗手间，主要分布在：1. 数字展示中心；2. 停车场附近；3. 实体洞窟区域。所有洗手间都配备基础设施，保持定期清洁。建议参观前提前规划好休息时间。',
+            '吃饭|用餐|餐厅|小吃|饮食': '景区内设有餐厅和小吃店，提供简餐、面食等，价格适中。建议在市区吃完早餐再来景区，或自带干粮和水。敦煌市区有很多特色美食，如驴肉黄面、羊肉泡馍、杏皮水等，值得品尝。',
+            '行李|寄存|存包|背包': '为了方便参观，建议将大件行李存放在游客中心的寄存处。贵重物品请随身携带。寄存服务收费标准：小件行李5元/件，大件行李10元/件。寄存时会发放凭条，请妥善保管。',
+            '轮椅|婴儿车|无障碍': '景区提供轮椅租赁服务，需要在游客中心办理。主要参观区域都设有无障碍通道。如需帮助，可以联系工作人员。建议提前告知讲解员，以便调整参观路线和节奏。',
+            '信号|网络|WIFI|上网': '景区主要区域都有手机信号覆盖。数字展示中心提供免费WIFI。在洞窟区域，信号可能会较弱，建议提前下载离线地图。为了更好的参观体验，建议减少使用手机。',
+            '停车|泊车|自驾|停车费': '景区设有专门的停车场，分为大型车和小型车区域。小型车停车费10-20元/次，大巴车30-50元/次。建议错峰停车，旺季时停车位紧张。自驾游客可以使用导航直接到达停车场。',
+            '天气|温度|气候|穿什么': '敦煌昼夜温差大，建议穿着舒适、轻便的衣物，最好分层穿着。夏季防晒必备：遮阳帽、防晒衣、太阳镜。冬季注意保暖：羽绒服、保暖内衣、围巾手套。全年都要带好防晒用品和水。',
+            '住宿|酒店|住哪|住宿建议': '可以选择住在敦煌市区，从市区到莫高窟约30分钟车程。市区有各类星级酒店和特色客栈，价格从200-1000元不等。也可以住在莫高窟景区附近，但选择较少。建议提前预订，旺季房价会上涨。',
+            '安全|保管|贵重物品|注意事项': '1. 保管好随身物品，贵重物品不要离身；2. 遵守景区规定，不要擅自行动；3. 注意台阶，保持安全距离；4. 补充水分，防止中暑；5. 听从工作人员指挥，发现问题及时报告。',
+            '语音导览|电子导游|讲解器': '景区不提供单独的语音导览器，而是配备专业讲解员全程讲解。A类门票包含讲解服务，讲解员经过专业培训，能深入浅出地介绍每个洞窟的特色。如需英语等外语讲解，建议提前预约。',
+            '投诉|意见|建议|问题反馈': '如遇到问题，可以：1. 现场向工作人员反映；2. 到游客服务中心投诉；3. 拨打景区服务热线；4. 通过官方微信公众号反馈。工作人员会认真处理您的意见，尽快给予回复。'
+        };
+
+        async function callOpenAI(message) {
+            // 检查是否匹配预设问答
+            for (let keywords of Object.keys(QA_DATABASE)) {
+                const keywordArray = keywords.split('|');
+                if (keywordArray.some(keyword => 
+                    message.toLowerCase().includes(keyword.toLowerCase()) || 
+                    keyword.toLowerCase().includes(message.toLowerCase())
+                )) {
+                    return QA_DATABASE[keywords];
+                }
+            }
+            
+            // 如果没有匹配到预设问答，返回更友好的提示
+            return `您好！看起来您想了解莫高窟的相关信息。您可以这样问我：
+
+            🏛️ 参观相关：
+            - "莫高窟在哪里？怎么去？"
+            - "门票多少钱？怎么买票？"
+            - "参观要多长时间？"
+            - "哪些洞窟最值得看？"
+
+            🎨 艺术特色：
+            - "壁画有什么特点？"
+            - "彩塑艺术怎么样？"
+            - "最有名的壁画是哪些？"
+
+            🏃 游玩建议：
+            - "什么季节去最好？"
+            - "带老人孩子去合适吗？"
+            - "有什么特色纪念品？"
+
+            或者您可以换个方式问我，我会尽力为您解答！`;
+        }
+
+        function toggleAIModal() {
+            const modal = document.getElementById('aiModal');
+            modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+            if (modal.style.display === 'block') {
+                document.getElementById('aiInput').focus();
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('aiInput');
+            const messages = document.getElementById('aiMessages');
+            const userMessage = input.value.trim();
+
+            if (userMessage) {
+                messages.innerHTML += `
+                    <div class="message user-message">
+                        ${userMessage}
+                    </div>
+                `;
+
+                input.value = '';
+                messages.scrollTop = messages.scrollHeight;
+
+                const response = await callOpenAI(userMessage);
+                messages.innerHTML += `
+                    <div class="message ai-message">
+                        ${response}
+                    </div>
+                `;
+                messages.scrollTop = messages.scrollHeight;
+            }
+        }
+    </script>
+</body>
+</html> 
